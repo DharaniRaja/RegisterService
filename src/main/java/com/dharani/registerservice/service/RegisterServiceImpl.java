@@ -1,25 +1,72 @@
 package com.dharani.registerservice.service;
 
+
+import com.dharani.registerservice.model.DateModel;
 import com.dharani.registerservice.model.User;
+import com.dharani.registerservice.repository.DateRepository;
 import com.dharani.registerservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.List;
 
 @Service
-public class RegisterServiceImpl implements RegisterService{
+public class RegisterServiceImpl implements RegisterService {
 
     @Autowired
-    private UserRepository userRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final UserRepository userRepository;
+    @Autowired
+    private final DateRepository dateRepository;
+
+    public RegisterServiceImpl(UserRepository userRepository, DateRepository dateRepository) {
+        this.userRepository = userRepository;
+        this.dateRepository = dateRepository;
+    }
+
 
     @Override
-    public void addUser(final User user) {
-        userRepository.save(user);
+    public User addUser(final User user) {
+        User save = userRepository.save(user);
+        User userByEmail = userRepository.findUserByEmail(user.getEmail());
+        final DateModel dateModel = new DateModel();
+        dateModel.setDate(GetDate());
+        dateModel.setTime(GetTime());
+        dateModel.setUserId(userByEmail.getUserId());
+        dateRepository.save(dateModel);
+        return save;
+    }
+    private Date GetDate() {
+        java.util.Date date=new java.util.Date();
+        java.sql.Date sqlDate=new java.sql.Date(date.getTime());
+        return sqlDate;
+    }
+    private Timestamp GetTime() {
+        java.util.Date date=new java.util.Date();
+        java.sql.Timestamp sqlTime=new java.sql.Timestamp(date.getTime());
+        return sqlTime;
     }
 
     @Override
-    public User getUsers(String email) {
-        return userRepository.findUserByEmail(email);
+    public User getUsers(final String email) {
+        User userByEmail = userRepository.findUserByEmail(email);
+        final DateModel dateModel = new DateModel();
+        dateModel.setDate(GetDate());
+        dateModel.setTime(GetTime());
+
+        dateModel.setUserId(userByEmail.getUserId());
+        dateRepository.save(dateModel);
+        return userByEmail;
+    }
+
+    @Override
+    public List<DateModel> getLoginDate(int userId) {
+        return dateRepository.findAllByUserId(userId);
+    }
+
+    @Override
+    public User getUserById(int id) {
+        return userRepository.findUserByUserId(id);
     }
 }
